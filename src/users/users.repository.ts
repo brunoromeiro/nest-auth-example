@@ -4,14 +4,51 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { CredentialsDto } from 'src/auth/dto/credentials.dto';
 import { EntityRepository, Repository } from 'typeorm';
+import { CredentialsDto } from '../auth/dto/credentials.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { FindUsersQueryDto } from './dto/find-users-query.dto';
 import { UserRole } from './user-roles.enum';
 import { User } from './user.entity';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
+  async findUsers(
+    queryDto: FindUsersQueryDto,
+  ): Promise<{ users: User[]; total: number }> {
+    console.log('queryDto', queryDto);
+    queryDto.status = queryDto.status === undefined ? true : queryDto.status;
+    queryDto.page = !queryDto.page ? 1 : queryDto.page < 1 ? 1 : queryDto.page;
+    queryDto.limit = !queryDto.limit
+      ? 10
+      : queryDto.limit > 100
+      ? 100
+      : queryDto.limit;
+
+    const { email, name, status, role } = queryDto;
+    const query = this.createQueryBuilder('user');
+    query.where('user.status = :status', { status });
+    if (email) {
+      query.andWhere('user.email ILIKE :email', { email: `%${email}%` });
+    }
+    if (name) {
+      query.andWhere('user.name ILIKE :name', { name: `%${name}%` });
+    }
+
+    if (role) {
+      query.andWhere('user.role = :role', { role });
+    }
+
+    query.skip((queryDto.page - 1) * queryDto.limit);
+    query.take(+queryDto.limit);
+    query.orderBy(queryDto.sort ? JSON.parse(queryDto.sort) : undefined);
+    query.select(['user.name', 'user.email', 'user.role', 'user.status']);
+
+    const [users, total] = await query.getManyAndCount();
+
+    return { users, total };
+  }
+
   async createUser(
     createUserDto: CreateUserDto,
     role: UserRole,
