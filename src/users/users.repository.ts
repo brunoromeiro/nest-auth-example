@@ -16,7 +16,6 @@ export class UserRepository extends Repository<User> {
   async findUsers(
     queryDto: FindUsersQueryDto,
   ): Promise<{ users: User[]; total: number }> {
-    console.log('queryDto', queryDto);
     queryDto.status = queryDto.status === undefined ? true : queryDto.status;
     queryDto.page = !queryDto.page ? 1 : queryDto.page < 1 ? 1 : queryDto.page;
     queryDto.limit = !queryDto.limit

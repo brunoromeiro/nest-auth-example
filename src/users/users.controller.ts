@@ -34,7 +34,6 @@ export class UsersController {
   async createAdminUser(
     @Body(ValidationPipe) createUserDto: CreateUserDto,
   ): Promise<ReturnUserDto> {
-    console.log('controller', createUserDto);
     const user = await this.usersService.createAdminUser(createUserDto);
     return {
       user,
@@ -79,7 +78,6 @@ export class UsersController {
   @Get()
   @Role(UserRole.ADMIN)
   async findUsers(@Query() query: FindUsersQueryDto) {
-    console.log(query);
     const found = await this.usersService.findUsers(query);
     return {
       found,
